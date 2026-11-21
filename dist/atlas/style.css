@@ -208,6 +208,8 @@ dialog p{font-size:15px;line-height:1.7;color:var(--text-2)}
 .geometry-credit{font-size:12px!important;border-top:1px solid var(--line);padding-top:14px}
 .toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:var(--text);color:var(--bg);padding:10px 16px;border-radius:10px;font-size:14px;z-index:30;box-shadow:var(--shadow)}
 .mobile-bar{display:none}
+/* inside the sidebar site the sidebar carries the brand and theme switch */
+.embedded .masthead{display:none}
 [hidden]{display:none!important}
 
 /* responsive */
