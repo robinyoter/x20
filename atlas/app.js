@@ -163,7 +163,12 @@ function renderRankings(){
 }
 
 /* ---------- URL state ---------- */
-function writeHash(){const p=new URLSearchParams();p.set('area',ui.state);if(ui.view!=='total')p.set('view',ui.view);if(ui.mode==='metric'){p.set('map',ui.metric);p.set('group',ui.group);if(ui.share)p.set('share','1');}if(ui.compare)p.set('vs',ui.compare);if(ui.rankMetric!=='population')p.set('rank',ui.rankMetric);try{history.replaceState(null,'','#'+p);}catch{}}
+/* Inside the sidebar site this page runs in an iframe: it then reports its view to the parent page. */
+const embedded=(()=>{try{return window.self!==window.top;}catch{return true;}})();
+if(embedded)document.documentElement.classList.add('embedded');
+function writeHash(){const p=new URLSearchParams();p.set('area',ui.state);if(ui.view!=='total')p.set('view',ui.view);if(ui.mode==='metric'){p.set('map',ui.metric);p.set('group',ui.group);if(ui.share)p.set('share','1');}if(ui.compare)p.set('vs',ui.compare);if(ui.rankMetric!=='population')p.set('rank',ui.rankMetric);try{history.replaceState(null,'','#'+p);}catch{}
+  if(embedded)try{window.parent.postMessage({type:'atlas-hash',hash:p.toString()},location.origin);}catch{}}
+function shareURL(){if(embedded)try{const t=window.top.location;return t.origin+t.pathname+location.hash.replace(/^#/,'#atlas/');}catch{}return location.href;}
 function readHash(){const p=new URLSearchParams(location.hash.slice(1));const has=id=>areas.some(a=>a.id===id);
   if(has(p.get('area')))ui.state=p.get('area');if(p.get('view')==='capita')ui.view='capita';
   if(['population','income','wealth','tax'].includes(p.get('map'))){ui.mode='metric';ui.metric=p.get('map');const g=+p.get('group');if(Number.isInteger(g)&&g>=0&&g<8)ui.group=g;ui.share=p.get('share')==='1';}
@@ -185,6 +190,8 @@ function exportCSV(){
 function applyTheme(){const c=cssVar('--map-base');if(/^#[0-9a-f]{6}$/i.test(c))mapBase=rgb(c);}
 $('theme-toggle').onclick=()=>{const dark=matchMedia('(prefers-color-scheme: dark)').matches;const cur=document.documentElement.dataset.theme||(dark?'dark':'light');const next=cur==='dark'?'light':'dark';document.documentElement.dataset.theme=next;try{localStorage.setItem('atlas-theme',next);}catch{}applyTheme();renderMap();};
 matchMedia('(prefers-color-scheme: dark)').addEventListener?.('change',()=>{applyTheme();renderMap();});
+/* the sidebar site switches the theme by setting data-theme on this page */
+new MutationObserver(()=>{applyTheme();renderMap();}).observe(document.documentElement,{attributes:true,attributeFilter:['data-theme']});
 
 /* ---------- events ---------- */
 document.querySelectorAll('[data-group-sort]').forEach(b=>b.onclick=()=>{const key=b.dataset.groupSort;ui.direction=ui.sort===key?(ui.direction==='desc'?'asc':'desc'):(key==='name'?'asc':'desc');ui.sort=key;renderPanel();});
@@ -201,7 +208,7 @@ $('compare-select').onchange=e=>{ui.compare=e.target.value;renderMap();};
 function trySearch(final){const q=$('search').value.trim().toLowerCase();if(!q)return;const hit=areas.find(a=>areaLabel(a).toLowerCase()===q||a.abbr.toLowerCase()===q)||(final&&areas.find(a=>areaLabel(a).toLowerCase().startsWith(q)));if(hit){selectState(hit.id);$('search').value='';$('search').blur();}else if(final)toast('No state matches “'+$('search').value+'”');}
 $('search').oninput=()=>trySearch(false);$('search').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();trySearch(true);}};
 $('csv-export').onclick=exportCSV;
-$('share-link').onclick=async()=>{writeHash();try{await navigator.clipboard.writeText(location.href);toast('Link copied');}catch{toast('Copy the address bar to share this view');}};
+$('share-link').onclick=async()=>{writeHash();try{await navigator.clipboard.writeText(shareURL());toast('Link copied');}catch{toast('Copy the address bar to share this view');}};
 document.querySelectorAll('[data-state]').forEach(b=>b.onclick=()=>selectState(states.find(s=>s.abbr===b.dataset.state).id));
 for(const id of ['about-open','method-open'])$(id).onclick=()=>{$('about').showModal();hideTip();};
 $('about-close').onclick=()=>$('about').close();
