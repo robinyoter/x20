@@ -18,6 +18,8 @@ const SECTIONS=[
 ];
 const $=id=>document.getElementById(id);
 const frames={};
+/* build stamp from index.html: new section URLs after each deploy, so browsers skip the 10-minute Pages cache */
+const BUILD=(document.querySelector('meta[name="build"]')||{}).content||'';
 let current=null;
 
 $('nav').innerHTML=SECTIONS.map(s=>`<a href="#${s.id}" data-id="${s.id}"><svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">${s.icon}</svg><b>${s.title}</b><small>${s.sub}</small></a>`).join('');
@@ -44,7 +46,7 @@ function show({id,inner}){
   if(!frames[id]){
     /* created only when first opened, so the page lays itself out while visible */
     const f=document.createElement('iframe');
-    f.title=s.title+' — '+s.sub;f.src=id+'/'+(inner?'#'+inner:'');
+    f.title=s.title+' — '+s.sub;f.src=id+'/'+(BUILD?'?v='+BUILD:'')+(inner?'#'+inner:'');
     f.addEventListener('load',()=>themeInto(f));
     frames[id]=f;$('stage').append(f);
   }else if(inner){
